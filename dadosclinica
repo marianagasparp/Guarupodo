@@ -1,0 +1,277 @@
+from tkinter import *
+from tkinter.ttk import *
+import csv
+
+class Cliente:
+    def __init__(self, nome, nascimento, telefone, endereco, email, ultimo_atend, observacoes):
+        self.nome = nome
+        self.nascimento = nascimento
+        self.telefone = telefone
+        self.endereco = endereco
+        self.email = email
+        self.ultimo_atend = ultimo_atend
+        self.observacoes = observacoes
+
+
+class GerenciadorClientes:
+    def __init__(self):
+        # Lê as informações existentes do arquivo CSV
+        self.clientes = []
+        try:
+            with open('clientes.csv', mode='r') as arquivo_csv:
+                reader = csv.reader(arquivo_csv)
+                self.clientes = [Cliente(*linha) for linha in reader]
+        except FileNotFoundError:
+            # Cria um novo arquivo CSV com o cabeçalho da tabela de clientes
+            with open('clientes.csv', mode='w', newline='') as arquivo_csv:
+                writer = csv.writer(arquivo_csv)
+                writer.writerow(['Nome','Data de Nascimento', 'Telefone','Endereço',  'E-mail','Ultimo Atendimento', 'Observações'])
+
+    def adicionar_cliente(self, cliente):
+        self.clientes.append(cliente)
+
+        # Ordena a lista de clientes em ordem alfabética pelo campo "Nome"
+        self.clientes.sort(key=lambda x: x.nome)
+
+        # Reescreve o arquivo CSV com as informações ordenadas
+        with open('clientes.csv', mode='w', newline='') as arquivo_csv:
+            writer = csv.writer(arquivo_csv)
+            for cliente in self.clientes:
+                writer.writerow([cliente.nome,cliente.nascimento, cliente.telefone, cliente.endereco, cliente.email, cliente.ultimo_atend, cliente.observacoes])
+
+    def excluir_cliente(self, cliente):
+        self.clientes.remove(cliente)
+
+        # Reescreve o arquivo CSV sem o cliente excluído
+        with open('clientes.csv', mode='w', newline='') as arquivo_csv:
+            writer = csv.writer(arquivo_csv)
+            for cliente in self.clientes:
+                writer.writerow([cliente.nome,cliente.nascimento, cliente.telefone, cliente.endereco, cliente.email,cliente.ultimo_atend, cliente.observacoes])
+
+class JanelaCadastro:
+    def __init__(self, gerenciador):
+        self.gerenciador = gerenciador
+
+        # Cria a janela principal
+        self.janela = Tk()
+        self.janela.title("Cadastro de clientes")
+        self.janela.geometry('450x520')
+
+        # Cria os campos de entrada
+        nome_label = Label(self.janela, text="Nome")
+        nome_label.place(x=20, y=20)
+        self.nome_entry = Entry(self.janela)
+        self.nome_entry.place(x=20, y=40, width=400)
+
+        nascimento_label = Label(self.janela, text="Data de Nascimento")
+        nascimento_label.place(x=20, y=70)
+        self.nascimento_entry = Entry(self.janela)
+        self.nascimento_entry.place(x=20, y=90, width=400)
+
+        telefone_label = Label(self.janela, text="Telefone")
+        telefone_label.place(x=20, y=120)
+        self.telefone_entry = Entry(self.janela)
+        self.telefone_entry.place(x=20, y=140, width=400)
+
+        endereco_label = Label(self.janela, text="Endereço")
+        endereco_label.place(x=20, y=170)
+        self.endereco_entry = Entry(self.janela)
+        self.endereco_entry.place(x=20, y=190, width=400)
+
+        email_label = Label(self.janela, text="E-mail")
+        email_label.place(x=20, y=220)
+        self.email_entry = Entry(self.janela)
+        self.email_entry.place(x=20, y=240, width=400)
+
+        ultimo_atend_label = Label(self.janela, text="Último Atendimento")
+        ultimo_atend_label.place(x=20, y=270)
+        self.ultimo_atend_entry = Entry(self.janela)
+        self.ultimo_atend_entry.place(x=20, y=290, width=400)
+
+        observacoes_label = Label(self.janela, text="Observações")
+        observacoes_label.place(x=20, y=320)
+        self.observacoes_text = Text(self.janela, height=3)
+        self.observacoes_text.place(x=20, y=340, width=400, height=100)
+
+        # Cria o botão Salvar
+        salvar_botao = Button(self.janela, text="Salvar", command=self.salvar)
+        salvar_botao.place(x=20, y=450, width=100, height=30)
+
+        # Cria o botão Visualizar
+        visualizar_botao = Button(self.janela, text="Lista de Clientes", command=self.visualizar)
+        visualizar_botao.place(x=250, y=450, width=150, height=30)
+
+
+    def salvar(self):
+        cliente = Cliente(self.nome_entry.get(),self.nascimento_entry.get(), self.telefone_entry.get(), self.endereco_entry.get(),  self.email_entry.get(), self.ultimo_atend_entry.get(), self.observacoes_text.get("1.0", "end-1c"))
+        self.gerenciador.adicionar_cliente(cliente)
+
+        # Limpa os campos de entrada
+        self.nome_entry.delete(0, END)
+        self.nascimento_entry.delete(0,END)
+        self.telefone_entry.delete(0, END)
+        self.endereco_entry.delete(0,END)
+        self.email_entry.delete(0, END)
+        self.ultimo_atend_entry.delete(0,END)
+        self.observacoes_text.delete("1.0", END)
+
+    def visualizar(self):
+        # Lê as informações dos clientes do arquivo CSV
+        self.gerenciador.clientes = []
+        with open('clientes.csv', mode='r') as arquivo_csv:
+            reader = csv.reader(arquivo_csv)
+            self.gerenciador.clientes = [Cliente(*linha) for linha in reader]
+
+        # Cria a janela para visualização dos clientes
+        janela_visualizacao = Toplevel()
+        janela_visualizacao.title("Visualização de clientes")
+
+        # Cria a tabela usando o widget Treeview
+        tabela = Treeview(janela_visualizacao, columns=('Nome','Data de Nascimento','Telefone' ,'Endereço' , 'E-mail', 'Último Atendimento', 'Observações'))
+        tabela.heading('#0', text='ID')
+        tabela.heading('Nome', text='Nome')
+        tabela.heading('Data de Nascimento', text='Data de Nascimento')
+        tabela.heading('Telefone', text='Telefone')
+        tabela.heading('Endereço', text='Endereço')
+        tabela.heading('E-mail', text='E-mail')
+        tabela.heading('Último Atendimento', text='Último Atendimento')
+        tabela.heading('Observações', text='Observações')
+
+
+        # Adiciona as linhas na tabela
+        for i, cliente in enumerate(self.gerenciador.clientes):
+            tabela.insert(parent='', index='end', iid=i, text=i, values=[cliente.nome, cliente.nascimento, cliente.telefone, cliente.endereco, cliente.email,cliente.ultimo_atend, cliente.observacoes])
+
+        # Configura o layout da tabela
+        tabela.pack(fill='both', expand=True)
+        tabela.column('#0', width=20, stretch=False)
+        tabela.column('Nome', width=220, anchor='w')
+        tabela.column('Data de Nascimento', width=120, anchor='w')
+        tabela.column('Telefone', width=100, anchor='w')
+        tabela.column('Endereço', width=230, anchor='w')
+        tabela.column('E-mail', width=200, anchor='w')
+        tabela.column('Último Atendimento', width=120, anchor='w')
+        tabela.column('Observações', width=300, anchor='w')
+        tabela.config(show='headings')
+    
+
+       # Cria o botão Editar
+        def editar():
+            # Obtém o ID do cliente selecionado
+            selecionado = tabela.focus()
+            if selecionado:
+                id_cliente = int(tabela.item(selecionado, 'text'))
+                cliente = gerenciador.clientes[id_cliente]
+
+                # Cria a janela de edição
+                janela_edicao = Toplevel()
+                janela_edicao.title("Editar cliente")
+                janela_edicao.geometry('450x520')
+
+                # Cria os campos de entrada
+                nome_label = Label(janela_edicao, text="Nome")
+                nome_label.place(x=20, y=20)
+                nome_entry = Entry(janela_edicao)
+                nome_entry.place(x=20, y=40, width=400)
+                nome_entry.insert(0, cliente.nome)
+
+                nascimento_label = Label(janela_edicao, text="Data de Nascimento")
+                nascimento_label.place(x=20, y=70)
+                nascimento_entry = Entry(janela_edicao)
+                nascimento_entry.place(x=20, y=90, width=400)
+                nascimento_entry.insert(0, cliente.nascimento)
+
+                telefone_label = Label(janela_edicao, text="Telefone")
+                telefone_label.place(x=20, y=120)
+                telefone_entry = Entry(janela_edicao)
+                telefone_entry.place(x=20, y=140, width=400)
+                telefone_entry.insert(0, cliente.telefone)
+
+                endereco_label = Label(janela_edicao, text="Endereço")
+                endereco_label.place(x=20, y=170)
+                endereco_entry = Entry(janela_edicao)
+                endereco_entry.place(x=20, y=190, width=400)
+                endereco_entry.insert(0, cliente.endereco)
+
+                email_label = Label(janela_edicao, text="E-mail")
+                email_label.place(x=20, y=220)
+                email_entry = Entry(janela_edicao)
+                email_entry.place(x=20, y=240, width=400)
+                email_entry.insert(0, cliente.email)
+
+                ultimo_atend_label = Label(janela_edicao, text="Último Atendimento")
+                ultimo_atend_label.place(x=20, y=270)
+                ultimo_atend_entry = Entry(janela_edicao)
+                ultimo_atend_entry.place(x=20, y=290, width=400)
+                ultimo_atend_entry.insert(0, cliente.ultimo_atend)
+                ultimo_atend_entry.focus()
+
+
+                observacoes_label = Label(janela_edicao, text="Observações")
+                observacoes_label.place(x=20, y=320)
+                observacoes_text = Text(janela_edicao, height=3)
+                observacoes_text.place(x=20, y=340, width=400, height=100)
+                observacoes_text.insert(END, cliente.observacoes)
+
+                # Cria o botão Salvar
+                def salvar_edicao(cliente):
+                    cliente.nome = nome_entry.get()
+                    cliente.nascimento = nascimento_entry.get()
+                    cliente.telefone = telefone_entry.get()
+                    cliente.endereco = endereco_entry.get()
+                    cliente.email = email_entry.get()
+                    cliente.ultimo_atend = ultimo_atend_entry.get()
+                    cliente.observacoes = observacoes_text.get("1.0", "end-1c")
+                    janela_edicao.destroy()
+                    atualizar_tabela()
+                    
+                
+                def atualizar_tabela():
+                    # Atualiza a tabela com as informações atualizadas dos clientes
+                    for i, cliente in enumerate(gerenciador.clientes):
+                        tabela.item(i, values=[cliente.nome, cliente.nascimento, cliente.telefone, cliente.endereco, cliente.email, cliente.ultimo_atend, cliente.observacoes])
+
+
+
+
+                salvar_botao = Button(janela_edicao, text="Salvar", command=lambda: salvar_edicao(cliente))
+                salvar_botao.place(x=20,y=450, width=100, height=30)
+                janela_edicao.mainloop()
+
+
+
+
+
+        editar_botao = Button(janela_visualizacao, text="Editar", command=editar)
+        editar_botao.pack()
+
+            # ...
+
+
+
+
+        # Cria o botão Excluir
+        def excluir():
+            # Obtém o ID do cliente selecionado
+            selecionado = tabela.focus()
+            if selecionado:
+                id_cliente = int(tabela.item(selecionado, 'text'))
+                cliente = self.gerenciador.clientes[id_cliente]
+                self.gerenciador.excluir_cliente(cliente)
+                # Atualiza a tabela
+                tabela.delete(*tabela.get_children())
+                for i, cliente in enumerate(self.gerenciador.clientes):
+                    tabela.insert(parent='', index='end', iid=i, text=i, values=[cliente.nome, cliente.nascimento, cliente.telefone, cliente.endereco, cliente.email, cliente.ultimo_atend, cliente.observacoes])
+
+        excluir_botao = Button(janela_visualizacao, text="Excluir", command=excluir)
+        excluir_botao.pack()
+
+        # Inicia a janela de visualização
+        janela_visualizacao.mainloop()
+
+
+gerenciador = GerenciadorClientes()
+janela = JanelaCadastro(gerenciador)
+janela.janela.mainloop()
+
+
